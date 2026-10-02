@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827"><title>SprintVision — Sprint Timer</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d2e;--panel2:#172438;--line:#29384e;--text:#eef4ff;--muted:#91a2bb;--lime:#c7f36b;--cyan:#58d8e8;--red:#ff7373}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0%,#1c3150 0,transparent 34%),var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:1180px;margin:auto;padding:22px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}.brand{display:flex;gap:12px;align-items:center}.logo{width:42px;height:42px;border-radius:13px;background:var(--lime);color:#15210a;display:grid;place-items:center;font-size:23px;font-weight:900}.brand h1{font-size:19px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}.status{border:1px solid var(--line);border-radius:30px;padding:7px 12px;color:var(--muted);font-size:12px}.status:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#77869a;margin-right:7px}.status.live:before{background:var(--lime);box-shadow:0 0 10px var(--lime)}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(290px,.8fr);gap:17px}.panel{background:linear-gradient(145deg,var(--panel),#101a2a);border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:0 15px 40px #0002}.panelhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}.panelhead h2{font-size:14px;margin:0}.tag{font-size:11px;color:var(--lime);background:#c7f36b16;border:1px solid #c7f36b35;padding:5px 9px;border-radius:20px}
+.stage{position:relative;overflow:hidden;background:#050a12;border-radius:13px;aspect-ratio:16/9;display:grid;place-items:center;border:1px solid #2c3a4e}.stage video,.stage canvas{position:absolute;width:100%;height:100%;inset:0;object-fit:contain}.stage canvas{pointer-events:none}.placeholder{text-align:center;color:var(--muted);padding:20px}.placeholder b{display:block;color:#dce8f8;margin:8px 0}.gate{position:absolute;top:0;bottom:0;width:2px;background:var(--lime);opacity:.85;pointer-events:none}.gate.finish{background:var(--cyan)}.gate span{position:absolute;top:8px;left:5px;font-size:10px;background:#0b1220d9;padding:4px 6px;border-radius:5px;white-space:nowrap}.overlayhint{position:absolute;bottom:8px;left:8px;background:#08111dcc;border:1px solid #ffffff20;padding:5px 8px;border-radius:7px;font-size:10px;color:#d9e5f4}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}.btn{border:0;border-radius:10px;padding:11px 15px;font-weight:700;background:var(--lime);color:#17210c;cursor:pointer}.btn.secondary{background:#24344a;color:var(--text);border:1px solid #3a4a60}.btn.danger{background:#45232b;color:#ffb7b7;border:1px solid #753640}.btn:disabled{opacity:.45;cursor:not-allowed}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.metric{background:var(--panel2);border:1px solid var(--line);padding:13px;border-radius:12px}.metric small{color:var(--muted);font-size:11px}.metric strong{display:block;font-size:25px;letter-spacing:-1px;margin-top:3px}.metric strong span{font-size:12px;color:var(--muted);letter-spacing:0}
+.field{margin:13px 0}.field label{display:flex;justify-content:space-between;color:#c9d5e5;font-size:12px;margin-bottom:7px}.field input,.field select{width:100%;accent-color:var(--lime)}.field input[type=text],.field select{background:#0c1727;color:var(--text);border:1px solid var(--line);padding:10px;border-radius:9px}
+.note{font-size:11px;color:var(--muted);margin:10px 0 0}.notice{margin-top:13px;padding:10px 12px;border-radius:10px;background:#13283a;border:1px solid #24465b;color:#b8dbea;font-size:12px}
+.tablewrap{overflow:auto;margin-top:13px}table{width:100%;border-collapse:collapse;font-size:12px;min-width:390px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}td{color:#e5edf8}.empty{text-align:center;color:var(--muted);padding:20px}
+.full{grid-column:1/-1}.foot{color:#70839c;font-size:11px;text-align:center;margin:18px 0 4px}
+@media(max-width:800px){.wrap{padding:14px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.top{margin-bottom:15px}.panel{padding:13px}.stage{aspect-ratio:4/3}.metrics{gap:8px}.metric strong{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><div class="brand"><div class="logo">S</div><div><h1>SprintVision</h1><p>Pengukur waktu sprint berbasis kamera & AI pose</p></div></div><div class="status" id="status">Kamera belum aktif</div></header>
+<main class="grid">
+<section class="panel">
+ <div class="panelhead"><h2>LIVE CAMERA DETECTION</h2><span class="tag" id="aiTag">AI belum dimuat</span></div>
+ <div class="stage" id="stage">
+  <video id="video" playsinline muted></video><canvas id="canvas"></canvas>
+  <div class="placeholder" id="placeholder"><div style="font-size:34px">◎</div><b>Kamera siap digunakan</b><span>Tekan “Aktifkan kamera” untuk mulai.</span></div>
+  <div class="gate" id="startGate" style="left:20%"><span>START</span></div><div class="gate finish" id="finishGate" style="left:80%"><span>FINISH</span></div>
+  <div class="overlayhint">Arah lari: kiri → kanan · Garis virtual</div>
+ </div>
+ <div class="controls"><button class="btn" id="cameraBtn">Aktifkan kamera</button><button class="btn secondary" id="resetBtn" disabled>Reset timer</button><button class="btn danger" id="stopBtn" disabled>Matikan kamera</button></div>
+ <div class="metrics"><div class="metric"><small>WAKTU SPRINT</small><strong id="time">00:00.00</strong></div><div class="metric"><small>KECEPATAN RATA-RATA</small><strong id="speed">— <span>km/jam</span></strong></div></div>
+ <div class="notice" id="message">Atur posisi kamera sehingga pelari terlihat dari samping dan bergerak dari kiri ke kanan melewati kedua garis.</div>
+</section>
+<aside class="panel">
+ <div class="panelhead"><h2>PENGATURAN TES</h2><span class="tag">KONFIGURASI</span></div>
+ <div class="field"><label>Nama peserta</label><input type="text" id="name" placeholder="Contoh: Andi"></div>
+ <div class="field"><label>Jarak sprint</label><select id="distance"><option value="30">30 meter</option><option value="50">50 meter</option><option value="60">60 meter</option><option value="100" selected>100 meter</option><option value="200">200 meter</option><option value="400">400 meter</option></select></div>
+ <div class="field"><label>Posisi garis START <span id="startVal">20%</span></label><input type="range" id="startPos" min="5" max="45" value="20"></div>
+ <div class="field"><label>Posisi garis FINISH <span id="finishVal">80%</span></label><input type="range" id="finishPos" min="55" max="95" value="80"></div>
+ <div class="field"><label>Ambang deteksi tubuh <span id="confVal">0.55</span></label><input type="range" id="confidence" min="30" max="90" value="55"></div>
+ <p class="note">Garis pada layar adalah zona pemicu virtual. Letakkan keduanya pada posisi lintasan yang terlihat kamera. Jarak yang dimasukkan harus jarak nyata di antara dua garis tersebut.</p>
+ <div class="notice">Sistem menggunakan titik tengah bahu/pinggul (torso) sebagai acuan lintasan. Satu pelari dalam area kamera disarankan.</div>
+</aside>
+<section class="panel full">
+ <div class="panelhead"><h2>RIWAYAT HASIL</h2><div class="controls" style="margin:0"><button class="btn secondary" id="csvBtn">Ekspor CSV</button><button class="btn secondary" id="clearBtn">Hapus riwayat</button></div></div>
+ <div class="tablewrap"><table><thead><tr><th>No.</th><th>Peserta</th><th>Jarak</th><th>Waktu</th><th>Kecepatan</th><th>Tanggal</th></tr></thead><tbody id="history"><tr><td colspan="6" class="empty">Belum ada hasil sprint.</td></tr></tbody></table></div>
+</section>
+</main><div class="foot">SprintVision · Prototipe pengukuran berbasis kamera. Hasil perlu divalidasi sebelum dipakai untuk penilaian resmi.</div>
+</div>
+<script type="module">
+import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+const $=id=>document.getElementById(id), video=$("video"), canvas=$("canvas"), ctx=canvas.getContext("2d");
+let stream=null, landmarker=null, raf=0, running=false, phase="ready", startAt=0, elapsed=0, lastX=null, lastTime=0, lastPoseAt=0, history=[];
+const setStatus=(s,live=false)=>{$("status").textContent=s;$("status").classList.toggle("live",live)};
+const msg=s=>$("message").textContent=s;
+function gates(){ $("startGate").style.left=$("startPos").value+"%";$("finishGate").style.left=$("finishPos").value+"%";$("startVal").textContent=$("startPos").value+"%";$("finishVal").textContent=$("finishPos").value+"%";$("confVal").textContent=(+$("confidence").value/100).toFixed(2);}
+["startPos","finishPos","confidence"].forEach(id=>$(id).addEventListener("input",gates));gates();
+function fmt(ms){let t=Math.max(0,ms)/1000;return `${String(Math.floor(t/60)).padStart(2,"0")}:${String(Math.floor(t%60)).padStart(2,"0")}.${String(Math.floor((t%1)*100)).padStart(2,"0")}`;}
+function drawPose(lm){ctx.clearRect(0,0,canvas.width,canvas.height);if(!lm)return;const pairs=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];ctx.lineWidth=3;ctx.strokeStyle="#c7f36b";pairs.forEach(([a,b])=>{if(lm[a].visibility>.35&&lm[b].visibility>.35){ctx.beginPath();ctx.moveTo(lm[a].x*canvas.width,lm[a].y*canvas.height);ctx.lineTo(lm[b].x*canvas.width,lm[b].y*canvas.height);ctx.stroke();}});lm.forEach(p=>{if(p.visibility>.45){ctx.beginPath();ctx.arc(p.x*canvas.width,p.y*canvas.height,4,0,Math.PI*2);ctx.fillStyle="#58d8e8";ctx.fill();}});}
+function updateTimer(){if(phase==="running")$("time").textContent=fmt(performance.now()-startAt);if(running)raf=requestAnimationFrame(updateTimer);}
+function crossing(x,now){
+ const sx=+$("startPos").value/100, fx=+$("finishPos").value/100, margin=.012;
+ if(lastX!==null){
+  if(phase==="ready" && lastX<sx-margin && x>=sx){phase="running";startAt=now;msg("START terdeteksi! Timer berjalan.");}
+  else if(phase==="running" && lastX<fx-margin && x>=fx){elapsed=now-startAt;phase="done";$("time").textContent=fmt(elapsed);const d=+$("distance").value;$("speed").innerHTML=(d/(elapsed/1000)*3.6).toFixed(2)+' <span>km/jam</span>';msg("FINISH terdeteksi. Hasil siap disimpan.");$("resetBtn").disabled=false;}
+ }
+ lastX=x;lastTime=now;
+}
+async function initAI(){if(landmarker)return;msg("Memuat model AI pose… koneksi internet diperlukan saat pertama kali.");const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");landmarker=await PoseLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},runningMode:"VIDEO",numPoses:1,minPoseDetectionConfidence:+$("confidence").value/100,minPosePresenceConfidence:.45,minTrackingConfidence:.45});$("aiTag").textContent="AI siap";$("aiTag").style.color="var(--lime)";}
+async function loop(){if(!running)return;if(video.readyState>=2&&landmarker){if(canvas.width!==video.videoWidth||canvas.height!==video.videoHeight){canvas.width=video.videoWidth;canvas.height=video.videoHeight;}const now=performance.now();if(now-lastPoseAt>40){lastPoseAt=now;const result=landmarker.detectForVideo(video,now);const lm=result.landmarks?.[0];drawPose(lm);if(lm){const ids=[11,12,23,24].filter(i=>lm[i]?.visibility>(+$("confidence").value/100));if(ids.length>=2){const x=ids.reduce((a,i)=>a+lm[i].x,0)/ids.length;crossing(x,now);}}else{lastX=null;}}}raf=requestAnimationFrame(loop);}
+$("cameraBtn").onclick=async()=>{try{$("cameraBtn").disabled=true;await initAI();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}},audio:false});video.srcObject=stream;await video.play();$("placeholder").style.display="none";$("stopBtn").disabled=false;$("resetBtn").disabled=false;running=true;phase="ready";lastX=null;setStatus("Kamera aktif · menunggu pelari",true);msg("AI aktif. Pelari harus masuk dari sisi kiri lalu melewati garis START.");loop();updateTimer();}catch(e){$("cameraBtn").disabled=false;setStatus("Kamera gagal aktif");msg("Tidak dapat mengaktifkan kamera/model AI: "+e.message+". Izinkan akses kamera dan gunakan HTTPS atau localhost.");}};
+$("stopBtn").onclick=()=>{running=false;cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;ctx.clearRect(0,0,canvas.width,canvas.height);$("placeholder").style.display="block";$("cameraBtn").disabled=false;$("stopBtn").disabled=true;setStatus("Kamera dimatikan");};
+$("resetBtn").onclick=()=>{phase="ready";lastX=null;elapsed=0;$("time").textContent="00:00.00";$("speed").innerHTML='— <span>km/jam</span>';$("resetBtn").disabled=true;msg("Timer direset. Tunggu pelari melewati garis START.");};
+function render(){const tb=$("history");if(!history.length){tb.innerHTML='<tr><td colspan="6" class="empty">Belum ada hasil sprint.</td></tr>';return;}tb.innerHTML=history.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td>${r.distance} m</td><td>${r.time}</td><td>${r.speed} km/jam</td><td>${r.date}</td></tr>`).join("");}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+$("csvBtn").onclick=()=>{if(!history.length)return;const rows=[["Peserta","Jarak (m)","Waktu","Kecepatan (km/jam)","Tanggal"],...history.map(r=>[r.name,r.distance,r.time,r.speed,r.date])];const csv=rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download="hasil-sprint.csv";a.click();URL.revokeObjectURL(a.href);};
+$("clearBtn").onclick=()=>{if(confirm("Hapus semua riwayat?")){history=[];render();}};
+$("time").addEventListener("click",()=>{});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&running)msg("Tab tidak aktif. Kembali ke halaman untuk melanjutkan pemantauan.");});
+const saveBtn=document.createElement("button");saveBtn.className="btn";saveBtn.textContent="Simpan hasil";saveBtn.style.marginTop="12px";saveBtn.disabled=true;$("message").parentElement.appendChild(saveBtn);
+const observer=new MutationObserver(()=>{saveBtn.disabled=phase!=="done";});observer.observe($("message"),{childList:true,subtree:true,characterData:true});
+saveBtn.onclick=()=>{if(phase!=="done")return;const d=+$("distance").value;history.unshift({name:$("name").value.trim()||"Peserta",distance:d,time:fmt(elapsed),speed:(d/(elapsed/1000)*3.6).toFixed(2),date:new Date().toLocaleString("id-ID")});render();phase="saved";saveBtn.disabled=true;msg("Hasil berhasil ditambahkan ke riwayat.");};
+</script>
+</body></html>
